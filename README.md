@@ -23,7 +23,7 @@ Bank Statement AI uses a two-layer categorization pipeline designed to maximize 
 
 ## Screenshots
 
-[Homepage](screenshots/homepage.png)
+![Homepage](screenshots/homepage.png)
 
 ![Transactions](screenshots/transactions.png)
 
