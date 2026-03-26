@@ -1,6 +1,6 @@
 # Bank Statement AI
 
-A personal finance tool that extracts, categorizes, and analyzes bank and credit card statements using OCR, keyword matching, and a local AI model — entirely on your own machine, no data sent to the cloud.
+A personal finance tool that extracts, categorizes, and analyzes bank and credit card statements using OCR, keyword matching, and AI processing runs entirely on your own machine via Ollama. No cloud AI is required
 
 ## Features
 
