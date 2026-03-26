@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Statement - Bank Statement AI{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+
+        <!-- Hero Header -->
+        <div class="text-center mb-4">
+            <h1 class="fw-bold">Upload a Statement</h1>
+            <p class="text-muted">Drop your bank or credit card PDF and let AI do the rest.</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <div class="card-body">
+
+                <!-- Icon Hints Row -->
+                <div class="row text-center mb-4 g-3">
+                    <div class="col-4">
+                        <i class="fas fa-file-pdf fa-2x text-danger mb-1"></i>
+                        <div class="small text-muted">PDF, PNG, JPG or CSV</div>
+                    </div>
+                    <div class="col-4">
+                        <i class="fas fa-lock fa-2x text-secondary mb-1"></i>
+                        <div class="small text-muted">Processed locally</div>
+                    </div>
+                    <div class="col-4">
+                        <i class="fas fa-bolt fa-2x text-warning mb-1"></i>
+                        <div class="small text-muted">Auto-categorized</div>
+                    </div>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data" class="mb-4">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Choose bank statement file:</label>
+                        <input type="file" class="form-control" id="file" name="file"
+                               accept=".pdf,.png,.jpg,.jpeg,.csv" required>
+                        <div class="form-text">
+                            Supported formats: PDF, PNG, JPG, JPEG, CSV (max 50MB)
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Upload File
+                    </button>
+                    <a href="/" class="btn btn-secondary ms-2">Back to Home</a>
+                </form>
+
+                <hr>
+
+                <!-- Uploaded Files List -->
+                <div id="uploaded-files">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0 fw-semibold">Recently Uploaded Files</h5>
+                        <button id="clear-all-btn" class="btn btn-outline-danger btn-sm" onclick="clearAllFiles()">
+                            <i class="fas fa-trash me-1"></i>Clear All
+                        </button>
+                    </div>
+                    <div id="files-list">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processing Modal -->
+<div class="modal fade" id="processingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <h5 id="processing-filename">Processing...</h5>
+                <p class="text-muted">Extracting text from PDF file</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="successToast" class="toast" role="alert">
+        <div class="toast-header bg-success text-white">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong class="me-auto">Processing Complete</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastBody">
+            <!-- Toast content will be set by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Load uploaded files list
+fetch('/api/uploaded-files')
+    .then(response => response.json())
+    .then(data => {
+        const filesList = document.getElementById('files-list');
+        if (data.files && data.files.length > 0) {
+            let html = '<div class="list-group">';
+            data.files.forEach(file => {
+                const status = file.processed ? 'Extracted' : 'Pending';
+                const statusClass = file.processed ? 'success' : 'warning';
+
+                let statusSection;
+                if (file.processed) {
+                    statusSection = `
+                        <div class="d-flex align-items-center gap-2">
+                            <small class="text-success">Extracted</small>
+                            <a href="/transactions/${file.id}" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-table me-1"></i>View Transactions
+                            </a>
+                        </div>
+                    `;
+                } else {
+                    statusSection = `
+                        <div class="d-flex align-items-center gap-2">
+                            <small class="text-warning">
+                                ${status} <i class="fas fa-info-circle" data-bs-toggle="tooltip"
+                                    title="This file has been saved to cloud storage and is ready to process"></i>
+                            </small>
+                            <button class="btn btn-primary btn-sm" onclick="processFile(${file.id}, '${file.filename}')"
+                                    id="process-btn-${file.id}">
+                                Process
+                            </button>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>${file.filename}</span>
+                        ${statusSection}
+                    </div>
+                `;
+            });
+            html += '</div>';
+            filesList.innerHTML = html;
+
+            // Initialize tooltips after content is loaded
+            const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
+        } else {
+            filesList.innerHTML = '<p class="text-muted">No files uploaded yet.</p>';
+        }
+    })
+    .catch(error => {
+        document.getElementById('files-list').innerHTML = '<p class="text-muted">No files uploaded yet.</p>';
+    });
+
+// Clear all files function
+function clearAllFiles() {
+    if (confirm('Are you sure you want to clear all uploaded files? This will remove all statements and transactions from the database.')) {
+        fetch('/api/clear-files', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('files-list').innerHTML = '<p class="text-muted">No files uploaded yet.</p>';
+                alert('All files cleared successfully!');
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Failed to clear files. Please try again.');
+        });
+    }
+}
+
+// Process File Function
+function processFile(fileId, filename) {
+    // Show processing modal
+    document.getElementById('processing-filename').textContent = `Processing ${filename}`;
+    const modal = new bootstrap.Modal(document.getElementById('processingModal'));
+    modal.show();
+
+    // Disable the process button
+    const processBtn = document.getElementById(`process-btn-${fileId}`);
+    processBtn.disabled = true;
+    processBtn.textContent = 'Processing...';
+
+    // Make API call to process the file
+    fetch(`/api/process-file/${fileId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Hide modal
+        modal.hide();
+
+        if (data.status === 'success') {
+            // Show success toast
+            const toastBody = document.getElementById('toastBody');
+            const transactionText = data.transactions === 1 ? 'transaction' : 'transactions';
+            const storedText = data.transactions_stored === 1 ? 'transaction stored' : 'transactions stored';
+            const skippedNote = data.transactions_skipped > 0
+                ? `<div class="text-warning small">${data.transactions_skipped} duplicate(s) skipped</div>`
+                : '';
+            toastBody.innerHTML = `
+                <div><strong>Successfully processed:</strong> ${filename}</div>
+                <div><strong>${data.transactions} ${transactionText} found &mdash; ${data.transactions_stored} ${storedText}</strong></div>
+                ${skippedNote}
+                <div class="text-muted small">${data.pages} pages, ${data.characters.toLocaleString()} characters</div>
+            `;
+
+            const toast = new bootstrap.Toast(document.getElementById('successToast'), {
+                autohide: true,
+                delay: 5000
+            });
+            toast.show();
+
+            // Reload the page after toast has time to display
+            setTimeout(() => {
+                location.reload();
+            }, 6000); // Wait 6 seconds so toast can display for full 5 seconds
+        } else {
+            // Show error message
+            alert(`❌ Error processing file:\n${data.message}`);
+
+            // Re-enable button
+            processBtn.disabled = false;
+            processBtn.textContent = 'Process';
+        }
+    })
+    .catch(error => {
+        // Hide modal and show error
+        modal.hide();
+        alert(`❌ Processing failed:\n${error.message || error}`);
+
+        // Re-enable button
+        processBtn.disabled = false;
+        processBtn.textContent = 'Process';
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Categories - Bank Statement AI{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h1 class="fw-bold mb-1">Categories</h1>
+                <p class="text-muted mb-0">Manage keywords that control how transactions are automatically categorized.</p>
+            </div>
+            <a href="{{ url_for('upload_file') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Upload
+            </a>
+        </div>
+
+        <!-- Add New Category Button -->
+        <div class="mb-4">
+            <button class="btn btn-primary btn-lg" id="add-category-btn" onclick="toggleNewCategoryForm()">
+                <i class="fas fa-plus me-2"></i>Add New Category
+            </button>
+        </div>
+
+        <!-- New Category Form (Hidden by default) -->
+        <div class="card mb-4" id="new-category-form" style="display: none;">
+            <div class="card-header">
+                <h5 class="mb-0">Create New Category</h5>
+            </div>
+            <div class="card-body">
+                <form id="create-category-form">
+                    <div class="mb-3">
+                        <label for="category-name" class="form-label">Category Name</label>
+                        <input type="text" class="form-control" id="category-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category-description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="category-description" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category-keywords" class="form-label">Initial Keywords (comma-separated)</label>
+                        <input type="text" class="form-control" id="category-keywords"
+                               placeholder="petco, vet, petsmart">
+                        <div class="form-text">Enter keywords separated by commas</div>
+                    </div>
+                    <button type="submit" class="btn btn-success">Create Category</button>
+                    <button type="button" class="btn btn-secondary ms-2" onclick="toggleNewCategoryForm()">Cancel</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Categories List -->
+        <div id="categories-list">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2">Loading categories...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Confirm Removal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">
+                <!-- Message will be populated dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmRemoveBtn">Remove</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let categoriesData = {};
+let pendingRemoval = null; // Store pending removal data
+
+// Load categories when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadCategories();
+
+    // Handle new category form submission
+    document.getElementById('create-category-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        createNewCategory();
+    });
+
+    // Handle modal confirmation
+    document.getElementById('confirmRemoveBtn').addEventListener('click', function() {
+        if (pendingRemoval) {
+            executeRemoval(pendingRemoval.categoryName, pendingRemoval.keyword);
+            pendingRemoval = null;
+
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+            modal.hide();
+        }
+    });
+});
+
+function loadCategories() {
+    fetch('/api/categories/all')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                categoriesData = data.categories;
+                renderCategories();
+            } else {
+                throw new Error(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading categories:', error);
+            document.getElementById('categories-list').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Failed to load categories: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function renderCategories() {
+    const container = document.getElementById('categories-list');
+    let html = '';
+
+    Object.entries(categoriesData).forEach(([categoryName, categoryData]) => {
+        html += `
+            <div class="card mb-3 shadow-sm" id="category-${categoryName.replace(/\s+/g, '-')}">
+                <div class="card-header">
+                    <h5 class="mb-1 fw-semibold">${categoryName}</h5>
+                    <small class="text-muted">${categoryData.description}</small>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Keywords:</label>
+                        <div class="keywords-container" id="keywords-${categoryName.replace(/\s+/g, '-')}">
+                            ${categoryData.keywords.map(keyword => `
+                                <span class="badge bg-primary me-1 mb-1">
+                                    ${keyword}
+                                    <button type="button" class="btn-close btn-close-white ms-1"
+                                            style="font-size: 0.6em;"
+                                            onclick="removeKeyword('${categoryName}', '${keyword}')">
+                                    </button>
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="form-control"
+                               placeholder="Add new keyword..."
+                               id="keyword-input-${categoryName.replace(/\s+/g, '-')}"
+                               onkeypress="handleKeywordKeypress(event, '${categoryName}')">
+                        <button class="btn btn-primary" type="button"
+                                onclick="addKeyword('${categoryName}')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function toggleNewCategoryForm() {
+    const form = document.getElementById('new-category-form');
+    const btn = document.getElementById('add-category-btn');
+
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+        btn.textContent = 'Cancel';
+        btn.className = 'btn btn-secondary';
+    } else {
+        form.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-plus me-2"></i>Add New Category';
+        btn.className = 'btn btn-primary';
+        // Clear form
+        document.getElementById('create-category-form').reset();
+    }
+}
+
+function createNewCategory() {
+    const name = document.getElementById('category-name').value.trim();
+    const description = document.getElementById('category-description').value.trim();
+    const keywordsStr = document.getElementById('category-keywords').value.trim();
+
+    if (!name || !description) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+
+    const keywords = keywordsStr ? keywordsStr.split(',').map(k => k.trim()).filter(k => k) : [];
+
+    fetch('/api/categories/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: name,
+            description: description,
+            keywords: keywords
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast(data.message, 'success');
+            toggleNewCategoryForm();
+            loadCategories(); // Reload to show new category
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Network error: ' + error.message, 'error');
+    });
+}
+
+function addKeyword(categoryName) {
+    const inputId = `keyword-input-${categoryName.replace(/\s+/g, '-')}`;
+    const input = document.getElementById(inputId);
+    const keyword = input.value.trim();
+
+    if (!keyword) {
+        showToast('Please enter a keyword', 'error');
+        return;
+    }
+
+    fetch('/api/categories/add-keyword', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            category: categoryName,
+            keyword: keyword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast(data.message, 'success');
+            input.value = '';
+            // Add keyword to display immediately
+            const keywordsContainer = document.getElementById(`keywords-${categoryName.replace(/\s+/g, '-')}`);
+            keywordsContainer.insertAdjacentHTML('beforeend', `
+                <span class="badge bg-primary me-1 mb-1">
+                    ${data.keyword}
+                    <button type="button" class="btn-close btn-close-white ms-1"
+                            style="font-size: 0.6em;"
+                            onclick="removeKeyword('${categoryName}', '${data.keyword}')">
+                    </button>
+                </span>
+            `);
+            // Update local data
+            categoriesData[categoryName].keywords.push(data.keyword);
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Network error: ' + error.message, 'error');
+    });
+}
+
+function removeKeyword(categoryName, keyword) {
+    // Store the removal data for when user confirms
+    pendingRemoval = { categoryName, keyword };
+
+    // Update modal content
+    document.getElementById('confirmModalBody').innerHTML =
+        `Are you sure you want to remove <strong>"${keyword}"</strong> from <strong>${categoryName}</strong>?`;
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+function executeRemoval(categoryName, keyword) {
+    fetch('/api/categories/remove-keyword', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            category: categoryName,
+            keyword: keyword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast(data.message, 'success');
+            // Remove keyword from display immediately
+            loadCategories(); // Reload to reflect changes
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Network error: ' + error.message, 'error');
+    });
+}
+
+function handleKeywordKeypress(event, categoryName) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        addKeyword(categoryName);
+    }
+}
+
+function showToast(message, type) {
+    const toastHtml = `
+        <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(toastContainer);
+    }
+
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    const toastElement = toastContainer.lastElementChild;
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+</script>
+{% endblock %}

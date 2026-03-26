@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ filename }} - Bank Statement AI{% endblock %}
+
+{% block content %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<div class="row">
+    <div class="col-12">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Analytics Dashboard</h1>
+                <h5 class="text-muted">{{ filename }}</h5>
+                <small class="text-muted">Uploaded: {{ upload_date }}</small>
+            </div>
+            <div>
+                <a href="{{ url_for('view_transactions', statement_id=statement_id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Transactions
+                </a>
+            </div>
+        </div>
+
+        <!-- AI Summary Card -->
+        <div class="card mb-4 ai-insight-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-robot me-2"></i>AI Spending Insight</h5>
+            </div>
+            <div class="card-body">
+                <div id="summary-spinner" class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2 mb-0">Analyzing your spending...</p>
+                </div>
+                <p id="summary-text" class="mb-0" style="display:none; line-height: 1.7;"></p>
+                <p id="summary-error" class="text-muted mb-0" style="display:none;"></p>
+            </div>
+        </div>
+
+        <!-- Charts Row 1: Donut + Horizontal Bar -->
+        <div class="row mb-4">
+            <div class="col-md-5">
+                <div class="card h-100 chart-card-blue">
+                    <div class="card-header">
+                        <h5 class="mb-0">Spending by Category</h5>
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-center">
+                        <canvas id="categoryChart" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="card h-100 chart-card-orange">
+                    <div class="card-header">
+                        <h5 class="mb-0">Top 10 Merchants by Spend</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="merchantChart" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 2: Weekly spending full width -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card chart-card-green">
+                    <div class="card-header">
+                        <h5 class="mb-0">Spending by Week</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="weeklyChart" style="max-height: 250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Chat Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Ask About Your Spending</h5>
+            </div>
+            <div class="card-body">
+                <div class="input-group mb-3">
+                    <input type="text" id="chat-input" class="form-control"
+                           placeholder="e.g. What should I cut back on? How does my restaurant spend compare to groceries?"
+                           maxlength="300">
+                    <button class="btn btn-primary" id="chat-send-btn" onclick="sendChatQuestion()">
+                        <i class="fas fa-paper-plane me-1"></i>Send
+                    </button>
+                </div>
+                <div id="chat-spinner" class="text-center py-2" style="display:none;">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <span class="text-muted ms-2">Thinking...</span>
+                </div>
+                <div id="chat-response" style="display:none;">
+                    <hr>
+                    <p id="chat-response-text" class="mb-0" style="line-height: 1.7;"></p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+const STATEMENT_ID = {{ statement_id }};
+
+// ── Chart data from Flask ─────────────────────────────────────────────────────
+const categoryLabels = {{ category_labels | tojson }};
+const categoryValues = {{ category_values | tojson }};
+const merchantLabels = {{ merchant_labels | tojson }};
+const merchantValues = {{ merchant_values | tojson }};
+const weekLabels     = {{ week_labels | tojson }};
+const weekValues     = {{ week_values | tojson }};
+
+// ── Colour palette ────────────────────────────────────────────────────────────
+const PALETTE = [
+    '#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f',
+    '#edc948','#b07aa1','#ff9da7','#9c755f','#bab0ac',
+    '#d37295','#fabfd2'
+];
+
+// ── 1. Donut — spending by category ──────────────────────────────────────────
+new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+        labels: categoryLabels,
+        datasets: [{
+            data: categoryValues,
+            backgroundColor: PALETTE.slice(0, categoryLabels.length),
+            borderWidth: 2
+        }]
+    },
+    options: {
+        plugins: {
+            legend: { position: 'right' },
+            tooltip: {
+                callbacks: {
+                    label: ctx => {
+                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                        const pct = ((ctx.parsed / total) * 100).toFixed(1);
+                        return ` ${ctx.label}: $${ctx.parsed.toFixed(2)} (${pct}%)`;
+                    }
+                }
+            }
+        }
+    }
+});
+
+// ── 2. Horizontal bar — top 10 merchants ─────────────────────────────────────
+new Chart(document.getElementById('merchantChart'), {
+    type: 'bar',
+    data: {
+        labels: merchantLabels,
+        datasets: [{
+            label: 'Total Spend ($)',
+            data: merchantValues,
+            backgroundColor: '#4e79a7',
+            borderRadius: 4
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: {
+            x: {
+                ticks: { callback: val => `$${val}` }
+            },
+            y: {
+                ticks: {
+                    font: { size: 11 },
+                    callback: function(val) {
+                        const label = this.getLabelForValue(val);
+                        return label.length > 30 ? label.substring(0, 28) + '\u2026' : label;
+                    }
+                }
+            }
+        }
+    }
+});
+
+// ── 3. Vertical bar — spending by week ───────────────────────────────────────
+new Chart(document.getElementById('weeklyChart'), {
+    type: 'bar',
+    data: {
+        labels: weekLabels,
+        datasets: [{
+            label: 'Weekly Spend ($)',
+            data: weekValues,
+            backgroundColor: '#59a14f',
+            borderRadius: 4
+        }]
+    },
+    options: {
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { ticks: { callback: val => `$${val}` } }
+        }
+    }
+});
+
+// ── AI summary — loads automatically on page open ────────────────────────────
+fetch(`/api/dashboard-summary/${STATEMENT_ID}`)
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('summary-spinner').style.display = 'none';
+        if (data.status === 'success') {
+            const el = document.getElementById('summary-text');
+            el.textContent = data.summary;
+            el.style.display = 'block';
+        } else {
+            const el = document.getElementById('summary-error');
+            el.textContent = data.message || 'Could not load summary.';
+            el.style.display = 'block';
+        }
+    })
+    .catch(() => {
+        document.getElementById('summary-spinner').style.display = 'none';
+        const el = document.getElementById('summary-error');
+        el.textContent = 'Could not reach the server. Please refresh.';
+        el.style.display = 'block';
+    });
+
+// ── AI chat ───────────────────────────────────────────────────────────────────
+function sendChatQuestion() {
+    const input = document.getElementById('chat-input');
+    const question = input.value.trim();
+    if (!question) return;
+
+    const btn = document.getElementById('chat-send-btn');
+    btn.disabled = true;
+    document.getElementById('chat-spinner').style.display = 'block';
+    document.getElementById('chat-response').style.display = 'none';
+
+    fetch(`/api/dashboard-chat/${STATEMENT_ID}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('chat-spinner').style.display = 'none';
+        btn.disabled = false;
+        const responseText = document.getElementById('chat-response-text');
+        responseText.textContent = data.status === 'success' ? data.answer : (data.message || 'No response.');
+        document.getElementById('chat-response').style.display = 'block';
+    })
+    .catch(() => {
+        document.getElementById('chat-spinner').style.display = 'none';
+        btn.disabled = false;
+        document.getElementById('chat-response-text').textContent = 'Request failed. Please try again.';
+        document.getElementById('chat-response').style.display = 'block';
+    });
+}
+
+// Allow Enter key to submit chat
+document.getElementById('chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendChatQuestion();
+});
+</script>
+{% endblock %}

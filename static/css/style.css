@@ -1,0 +1,108 @@
+/* ── Bank Statement AI — Custom Styles ───────────────────────────────────── */
+
+/* ── Global ──────────────────────────────────────────────────────────────── */
+
+body {
+    background-color: #f0f2f5;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ── Navbar ──────────────────────────────────────────────────────────────── */
+
+#main-nav {
+    background-color: #1a2332 !important;
+}
+
+#main-nav .navbar-brand {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+#main-nav .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    transition: color 0.15s;
+}
+
+#main-nav .nav-link:hover {
+    color: #ffffff !important;
+}
+
+/* ── Cards ───────────────────────────────────────────────────────────────── */
+
+.card {
+    border: none !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+    background-color: #f8f9fa !important;
+    border-bottom: 1px solid #e9ecef !important;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
+.btn {
+    padding: 8px 16px;
+}
+
+.btn-sm {
+    padding: 4px 10px;
+    font-size: 0.875rem;
+}
+
+/* ── Transaction table ───────────────────────────────────────────────────── */
+
+tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+/* ── Toast z-index ───────────────────────────────────────────────────────── */
+
+.toast-container {
+    z-index: 1055;
+}
+
+/* ── Upload page file list ───────────────────────────────────────────────── */
+
+.list-group-item .d-flex.gap-2 {
+    gap: 0.5rem !important;
+}
+
+/* ── Status text weights ─────────────────────────────────────────────────── */
+
+.text-success {
+    font-weight: 500;
+}
+
+.text-warning {
+    font-weight: 500;
+}
+
+/* ── Dashboard chart cards ───────────────────────────────────────────────── */
+
+.chart-card-blue   { border-left: 4px solid #4e79a7 !important; }
+.chart-card-orange { border-left: 4px solid #f28e2b !important; }
+.chart-card-green  { border-left: 4px solid #59a14f !important; }
+
+/* ── AI Insight card ─────────────────────────────────────────────────────── */
+
+.ai-insight-card {
+    background-color: #f0f7ff !important;
+}
+
+.ai-insight-card .card-body p {
+    font-size: 1.05rem;
+    line-height: 1.8;
+}
+
+/* ── Homepage hero ───────────────────────────────────────────────────────── */
+
+.hero-section {
+    padding: 3rem 0 2.5rem;
+}
+
+.hero-subtitle {
+    max-width: 580px;
+    margin-left: auto;
+    margin-right: auto;
+}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Bank Statement AI{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="hero-section text-center">
+    <h1 class="display-5 fw-bold mb-3">Bank Statement AI</h1>
+    <p class="lead text-muted hero-subtitle mb-4">
+        Upload your Chase statements and instantly get AI-powered spending insights,
+        automatic categorization, and visual analytics.
+    </p>
+    <a href="/upload" class="btn btn-primary btn-lg px-5">
+        <i class="fas fa-upload me-2"></i>Upload Statement
+    </a>
+</div>
+
+<!-- Feature cards -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card h-100 text-center p-3">
+            <div class="card-body">
+                <div class="mb-3">
+                    <i class="fas fa-tags fa-2x text-primary"></i>
+                </div>
+                <h5 class="card-title fw-semibold">Smart Categorization</h5>
+                <p class="card-text text-muted">
+                    Keyword matching plus local LLM fallback automatically categorizes every transaction.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 text-center p-3">
+            <div class="card-body">
+                <div class="mb-3">
+                    <i class="fas fa-chart-pie fa-2x text-success"></i>
+                </div>
+                <h5 class="card-title fw-semibold">Visual Analytics</h5>
+                <p class="card-text text-muted">
+                    Interactive charts show spending by category, top merchants, and weekly trends.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 text-center p-3">
+            <div class="card-body">
+                <div class="mb-3">
+                    <i class="fas fa-robot fa-2x text-warning"></i>
+                </div>
+                <h5 class="card-title fw-semibold">AI Insights</h5>
+                <p class="card-text text-muted">
+                    Ask natural language questions about your spending and get grounded answers from your actual data.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System status — small, unobtrusive -->
+<div class="text-center text-muted small mb-4">
+    <span id="system-status">Checking system status...</span>
+    &nbsp;·&nbsp;
+    <a href="/health" class="text-muted">View Details</a>
+</div>
+
+<script>
+fetch('/health')
+    .then(r => r.json())
+    .then(data => {
+        const el = document.getElementById('system-status');
+        if (data.app_status === 'running' && data.database.status === 'connected') {
+            el.innerHTML = '<span class="text-success">&#x25cf;</span> System Online';
+        } else {
+            el.innerHTML = '<span class="text-danger">&#x25cf;</span> System Error';
+        }
+    })
+    .catch(() => {
+        document.getElementById('system-status').innerHTML =
+            '<span class="text-warning">&#x25cf;</span> Status Unknown';
+    });
+</script>
+{% endblock %}

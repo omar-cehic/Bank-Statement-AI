@@ -1,0 +1,30 @@
+# ── Secrets & credentials ─────────────────────────────────────────────────────
+.env
+
+# ── Personal financial data ───────────────────────────────────────────────────
+
+# Live database only — not a global *.db rule
+database/database.db
+
+# Backup files — created at runtime by backup_utils.py
+backups/
+
+# Uploaded statement PDFs
+uploads/
+
+# Generated CSV exports
+exports/
+
+# ── Python cache ──────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+
+# ── Claude Code local settings ────────────────────────────────────────────────
+.claude/
+
+# ── OS & IDE noise ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

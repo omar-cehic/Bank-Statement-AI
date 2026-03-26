@@ -1,0 +1,225 @@
+{
+  "categories": {
+    "Payments": {
+      "description": "Credit card payments and transfers",
+      "keywords": [
+        "payment",
+        "thank you",
+        "autopay",
+        "online payment",
+        "mobile payment",
+        "transfer",
+        "credit"
+      ]
+    },
+    "Restaurants": {
+      "description": "Full-service restaurants and dining",
+      "keywords": [
+        "uncle julio's",
+        "olive garden",
+        "applebee's",
+        "chili's",
+        "red lobster",
+        "outback",
+        "texas roadhouse",
+        "cheesecake factory",
+        "ihop",
+        "denny's",
+        "restaurant",
+        "bistro",
+        "grill",
+        "cafe",
+        "diner",
+        "giordano",
+        "tst*",
+        "cupitol coffee",
+        "coffee"
+      ]
+    },
+    "Fast Food": {
+      "description": "Quick service restaurants and fast food chains",
+      "keywords": [
+        "panda express",
+        "mcdonald's",
+        "chipotle",
+        "burger king",
+        "taco bell",
+        "kfc",
+        "subway",
+        "pizza hut",
+        "domino's",
+        "wendy's",
+        "arby's",
+        "popeyes",
+        "chick-fil-a",
+        "starbucks",
+        "dunkin",
+        "dd/br",
+        "7-eleven",
+        "7eleven"
+      ]
+    },
+    "Gas": {
+      "description": "Gas stations and fuel purchases",
+      "keywords": [
+        "bp",
+        "shell",
+        "exxon",
+        "mobil",
+        "chevron",
+        "marathon",
+        "speedway",
+        "gas",
+        "fuel",
+        "station",
+        "petroleum"
+      ]
+    },
+    "Groceries": {
+      "description": "Grocery stores and food shopping",
+      "keywords": [
+        "trader joe's",
+        "trader joe s",
+        "trader joes",
+        "whole foods",
+        "kroger",
+        "safeway",
+        "publix",
+        "walmart",
+        "target",
+        "costco",
+        "sam's club",
+        "aldi",
+        "meijer",
+        "grocery",
+        "supermarket",
+        "food mart",
+        "market place",
+        "marketplace"
+      ]
+    },
+    "Entertainment": {
+      "description": "Movies, games, and entertainment venues",
+      "keywords": [
+        "cmx cinemas",
+        "fandango",
+        "amc",
+        "regal",
+        "netflix",
+        "hulu",
+        "disney+",
+        "amazon prime",
+        "spotify",
+        "apple music",
+        "xbox",
+        "playstation",
+        "steam",
+        "cinema",
+        "theater",
+        "movie",
+        "brookfield zoo",
+        "chicago park"
+      ]
+    },
+    "Shopping": {
+      "description": "Retail stores and general shopping",
+      "keywords": [
+        "lego store",
+        "amazon",
+        "target",
+        "walmart",
+        "best buy",
+        "home depot",
+        "lowe's",
+        "macy's",
+        "nordstrom",
+        "kohl's",
+        "tj maxx",
+        "marshall's",
+        "store",
+        "retail",
+        "mall"
+      ]
+    },
+    "Subscriptions": {
+      "description": "Monthly subscriptions and services",
+      "keywords": [
+        "claude.ai",
+        "netflix",
+        "hulu",
+        "disney+",
+        "spotify",
+        "apple music",
+        "amazon prime",
+        "microsoft",
+        "adobe",
+        "subscription",
+        "monthly",
+        "annual",
+        "recurring",
+        "railway",
+        "railway.com"
+      ]
+    },
+    "Health": {
+      "description": "Healthcare, pharmacy, and medical expenses",
+      "keywords": [
+        "walgreens",
+        "cvs",
+        "pharmacy",
+        "doctor",
+        "hospital",
+        "medical",
+        "dentist",
+        "clinic",
+        "urgent care",
+        "prescription",
+        "health",
+        "wellness"
+      ]
+    },
+    "Travel": {
+      "description": "Travel-related expenses",
+      "keywords": [
+        "alpine valley",
+        "hotel",
+        "motel",
+        "airline",
+        "airport",
+        "uber",
+        "lyft",
+        "rental car",
+        "travel",
+        "vacation",
+        "trip",
+        "booking"
+      ]
+    },
+    "Other": {
+      "description": "Miscellaneous transactions that don't fit other categories",
+      "keywords": [
+        "vending machine",
+        "365 vend",
+        "snack*",
+        "avalanche",
+        "zippys",
+        "car wash",
+        "parking",
+        "usps",
+        "post office",
+        "barber",
+        "salon",
+        "hair"
+      ]
+    },
+    "Pet Care": {
+      "description": "Pet-related expenses and veterinary costs",
+      "keywords": [
+        "petco",
+        "vet",
+        "petsmart",
+        "pet supplies"
+      ]
+    }
+  }
+}
