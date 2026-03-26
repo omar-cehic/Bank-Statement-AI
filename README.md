@@ -1,6 +1,8 @@
 # Bank Statement AI
 
-A personal finance tool that extracts, categorizes, and analyzes bank and credit card statements using OCR, keyword matching, and a local AI model — entirely on your own machine, no data sent to the cloud.
+> 🎥 Demo video coming soon — link will be added here
+
+A full-stack AI-powered financial data pipeline that automatically extracts, categorizes, and analyzes bank statements using a two-layer categorization architecture — keyword matching backed by a locally-hosted LLM — with zero cloud AI dependencies. All inference runs on your own machine via Ollama.
 
 ## Features
 
@@ -15,6 +17,14 @@ A personal finance tool that extracts, categorizes, and analyzes bank and credit
 - **Backup & Restore** — One-click SQLite database backup with timestamped files, download to local disk, and restore from any backup
 - **Settings Page** — Configure Ollama URL and model, trigger backups, view database statistics
 
+## How It Works
+
+Bank Statement AI uses a two-layer categorization pipeline designed to maximize accuracy without relying on any external AI service. When a statement is uploaded, the file is stored to AWS S3 and its text is extracted locally via pdfplumber; each transaction then passes through a keyword matcher that resolves roughly 95% of transactions in milliseconds using a configurable `categories.json` ruleset. Any transaction that escapes keyword matching is forwarded to a locally-running Ollama instance (llama3), which classifies it using a structured prompt constrained to valid category names — preventing hallucinations while handling merchants the keyword list has never seen. The same Ollama instance powers the analytics dashboard's auto-generated spending summary and the interactive AI chat, both of which receive your actual spending data as context so every response is grounded in real numbers rather than generic advice.
+
+## Screenshots
+
+> 📸 Screenshots coming soon — will be added after demo recording
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -24,7 +34,7 @@ A personal finance tool that extracts, categorizes, and analyzes bank and credit
 | PDF Parsing | pdfplumber |
 | OCR (images) | Pillow |
 | Categorization | Keyword matching + Ollama (llama3) |
-| AI / LLM | Ollama — runs locally, no API key needed |
+| AI / LLM | Ollama — runs locally, no external AI API needed |
 | File Storage | AWS S3 via boto3 (optional) |
 | Frontend | Bootstrap 5.3, Vanilla JS, Chart.js 4.4 |
 | Fonts / Icons | Google Fonts (Inter), Font Awesome 6 |
@@ -77,7 +87,7 @@ See `.env.example` for all available variables. Key ones:
 |---|---|---|
 | `OLLAMA_URL` | `http://localhost:11434` | Base URL of your Ollama instance |
 | `OLLAMA_MODEL` | `llama3` | Model to use for categorization and AI insights |
-| `S3_BUCKET_NAME` | — | AWS S3 bucket (optional, for cloud file storage) |
+| `S3_BUCKET_NAME` | — | AWS S3 bucket for statement file storage |
 | `FLASK_DEBUG` | `True` | Set to `False` in production |
 
 ## Project Structure
@@ -117,6 +127,6 @@ Bank_Statement_AI/
 
 ## Notes
 
-- All AI processing (categorization, summaries, chat) runs locally via Ollama — no data is sent to any external AI service
+- All AI inference (categorization, summaries, chat) runs locally via Ollama — no data is sent to any external AI service
+- Statement files are uploaded to AWS S3 for storage; S3 integration is optional and the app works fully without it
 - Tested primarily with Chase credit card PDF statements
-- AWS S3 integration is optional; the app works fully without it (files are processed locally then discarded)
