@@ -1,6 +1,6 @@
 # Bank Statement AI
 
-> 🎥 Demo video coming soon — link will be added here
+> Demo video  — (https://www.loom.com/share/5498377289f040ec95d8e9c797abc834)
 
 A full-stack AI-powered financial data pipeline that automatically extracts, categorizes, and analyzes bank statements using a two-layer categorization architecture — keyword matching backed by a locally-hosted LLM — with zero cloud AI dependencies. All inference runs on your own machine via Ollama.
 
